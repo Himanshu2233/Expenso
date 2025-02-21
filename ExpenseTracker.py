@@ -1,6 +1,7 @@
 from tkinter import *
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 import sqlite3
+from PIL import Image, ImageTk
 import time
 
 def connect():
@@ -11,15 +12,7 @@ def connect():
     conn.close()
 connect() #xune haina
 
-def edit():
-    conn=sqlite3.connect("loginpage.db")
-    cur=conn.cursor()
-    cur.execute("UPDATE users SET name=?,password=? WHERE username=?",(register_name.get(),register_password.get(),register_username.get()))
-    conn.commit()
-    conn.close()
-    messagebox.showinfo('Successful', 'User updated')
-    
-        
+
 def viewallusers():
     conn=sqlite3.connect("loginpage.db")
     cur=conn.cursor()
@@ -113,15 +106,15 @@ def appwindow():
     def connect1():
         conn=sqlite3.connect("expenseapp.db")
         cur=conn.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS expensetable(id INTEGER PRIMARY KEY,itemname TEXT,date TEXT,cost TEXT)")
+        cur.execute("CREATE TABLE IF NOT EXISTS expensetable(id INTEGER PRIMARY KEY,itemname TEXT,date TEXT,cost TEXT, category TEXT)")
         conn.commit()
         conn.close()
     connect1()
 
-    def insert(itemname,date,cost):
+    def insert(itemname,date,cost,category):
         conn=sqlite3.connect("expenseapp.db")
         cur=conn.cursor()
-        cur.execute("INSERT INTO expensetable VALUES(NULL,?,?,?)",(itemname,date,cost))
+        cur.execute("INSERT INTO expensetable VALUES(NULL,?,?,?,?)",(itemname,date,cost,category))
         conn.commit()
         conn.close()
 
@@ -134,14 +127,22 @@ def appwindow():
         conn.close()
         return rows
     
-    def search(itemname="",date="",cost=""):
+    def search(itemname="",date="",cost="",category=""):
         conn=sqlite3.connect("expenseapp.db")
         cur=conn.cursor()
-        cur.execute("SELECT *FROM expensetable WHERE itemname=? OR date=? OR cost=?",(itemname,date,cost))
+        cur.execute("SELECT *FROM expensetable WHERE itemname=? OR date=? OR cost=? OR category=?",(itemname,date,cost,category))
         rows=cur.fetchall()
         conn.commit()
         conn.close()
         return rows
+    
+    def edit():
+        conn=sqlite3.connect("expenseapp.db")
+        cur=conn.cursor()
+        cur.execute("UPDATE users SET name=?,password=? WHERE username=?",(register_name.get(),register_password.get(),register_username.get()))
+        conn.commit()
+        conn.close()
+        messagebox.showinfo('Successful', 'User updated')
 
     def delete(id):
         conn=sqlite3.connect("expenseapp.db")
@@ -176,31 +177,35 @@ def appwindow():
         a=exp_itemname.get()
         b=exp_date.get()
         c=exp_cost.get()
+        h=exp_category.get()
         d=c.replace('.', '', 1)
         e=b.count('-')      
 
-        if a=="" or b=="" or c=="":
+        if a=="" or b=="" or c=="" or h=="":
             messagebox.showinfo("oops something wrong","Field should not be empty")
         elif len(b)!=10 or e!=2:
             messagebox.showinfo("oops something wrong","DATE should be in format dd-mm-yyyy")
         elif (d.isdigit()==False):
             messagebox.showinfo("oops something wrong","Cost should be a number")
         else:
-            insert(a,b,c)
+            insert(a,b,c,h)
+            messagebox.showinfo('Successful', 'Item added')
             e1.delete(0,END)
             e2.delete(0,END)
             e3.delete(0,END)
+            e4.delete(0,END)
         list1.delete(0,END)
 
     def viewallitems():
         list1.delete(0,END)
-        list1.insert(END,"ID   NAME     DATE      COST")
+        list1.insert(END,"ID     NAME      DATE    COST  Category")
         for row in view():
             a=str(row[0])
             b=str(row[1])
             c=str(row[2])
             d=str(row[3])
-            f= a + "     " + b + "    " + c + "    " + d
+            e=str(row[4])
+            f= a + "     " + b + "    " + c + "    " + d + "    " + e
             list1.insert(END,f)
     
     def deletewithid():
@@ -211,23 +216,25 @@ def appwindow():
     def search_item():
         list1.delete(0,END)
         list1.insert(END,"ID   NAME     DATE      COST")
-        for row in search(exp_itemname.get(),exp_date.get(),exp_cost.get()):
+        for row in search(exp_itemname.get(),exp_date.get(),exp_cost.get(),exp_category.get()):
             a=str(row[0])
             b=str(row[1])
             c=str(row[2])
             d=str(row[3])
-            f= a + "     " + b + "    " + c + "    " + d
+            e=str(row[4])
+            f= a + "     " + b + "    " + c + "    " + d +"   "+ e
             list1.insert(END,f)
         e1.delete(0,END)
         e2.delete(0,END)
         e3.delete(0,END)
+        e4.delete(0,END)
     
     def endpage():
         Label(gui,width=100,height=100,font=("century",35),bg="#bfbfbf",text="").place(x=-455,y=0)
         Label(gui,font=("lucida fax",40),bg="#bfbfbf",text="EXPENSE TRACKER").place(x=190,y=10)
         Label(gui,font=("gabriola",40),bg="#bfbfbf",text="An application developed using").place(x=70,y=170)
         Label(gui,font=("gabriola",40),bg="#bfbfbf",text="sqlite3 and tkinter").place(x=400,y=250)
-        Label(gui,font=("ink free",35),bg="#bfbfbf",text="RASHRIM").place(x=500,y=450)
+        Label(gui,font=("ink free",35),bg="#bfbfbf",text="HimanshuM").place(x=500,y=450)
         h=Label(gui,font=("century",25),bg="#bfbfbf",text="This window auomatically closes after")
         h.place(x=65,y=650)
         ltime=Label(gui,font=("century",25),bg="#bfbfbf",fg="black")
@@ -260,22 +267,27 @@ def appwindow():
     exp_cost=StringVar()
     e3=Entry(gui,font=("adobe clean",15),textvariable=exp_cost)
     e3.place(x=220,y=255,height=27,width=165)
+    exp_category = StringVar()
+    l6=Label(gui,font=("comic sans ms",17),bg="#0066ff",text="Category").place(x=10,y=300)
+    e4 = ttk.Combobox(gui, textvariable=exp_category, values=["FOOD", "CLOTHES", "ELECTRONICS", "OTHERS"], font=("adobe clean",15))
+    e4.place(x=220,y=300,height=27,width=165)
     l4=Label(gui,font=("comic sans ms",17),bg="#1ad1ff",text="Select ID to delete").place(x=520,y=170)
     exp_id=StringVar()
     sb=Spinbox(gui, font=("adobe clean",17),from_= 0, to_ = 200,textvariable=exp_id,justify=CENTER)
-    sb.place(x=745,y=174,height=30,width=50)
+    sb.place(x=765,y=174,height=30,width=50)
     scroll_bar=Scrollbar(gui)
-    scroll_bar.place(x=651,y=410,height=277,width=20)  
+    scroll_bar.place(x=671,y=410,height=277,width=20)  
     list1=Listbox(gui,height=7,width=30,font=("comic sans ms",20),yscrollcommand = scroll_bar.set)
-    list1.place(x=168,y=410)
+    list1.place(x=188,y=410)
     scroll_bar.config( command = list1.yview )
-    b1=Button(gui,text="Add Item",font=("georgia",17),activebackground="#fffa66",activeforeground="red",width=10,command=insertitems).place(x=30,y=300)
-    b2=Button(gui,text="View all items",font=("georgia",17),activebackground="#fffa66",activeforeground="red",width=12,command=viewallitems).place(x=110,y=355)
+    b1=Button(gui,text="Add Item",font=("georgia",17),activebackground="#fffa66",activeforeground="red",width=10,command=insertitems).place(x=30,y=350)
+    b2=Button(gui,text="View all items",font=("georgia",17),activebackground="#fffa66",activeforeground="red",width=12,command=viewallitems).place(x=8,y=545)
     b3=Button(gui,text="Delete with id",font=("georgia",17),activebackground="#fffa66",activeforeground="red",width=12,command=deletewithid).place(x=572,y=220)
     b4=Button(gui,text="Delete all items",font=("georgia",17),activebackground="#fffa66",activeforeground="red",width=15,command=deletealldata).place(x=550,y=280)
-    b5=Button(gui,text="Search",font=("georgia",17),activebackground="#fffa66",activeforeground="red",width=10,command=search_item).place(x=220,y=298)
+    b5=Button(gui,text="Search",font=("georgia",17),activebackground="#fffa66",activeforeground="red",width=10,command=search_item).place(x=220,y=350)
     b6=Button(gui,text="Total spent",font=("georgia",17),activebackground="#fffa66",activeforeground="red",width=15,command=sumofitems).place(x=550,y=340)
     b7=Button(gui,text="Close app",font=("georgia",17),activebackground="#fffa66",activeforeground="red",width=10,command=endpage).place(x=700,y=650)
+    b8=Button(gui,text="Edit",font=("georgia",17),activebackground="#fffa66",activeforeground="red",width=10,command=edit).place(x=8,y=445)
     l6=Label(gui,width=60,font=("century",35),bg="#ff9999",fg="#b32d00",text="EXPENSE  TRACKER").place(x=-450,y=0)
     name = "Welcome, " + profilename
     l9=Label(gui,width=60,font=("century",30),bg="#9999ff",fg="black",text=name).place(x=-530,y=61)
