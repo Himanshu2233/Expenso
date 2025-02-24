@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox
 import sqlite3
 from PIL import Image, ImageTk
 import time
+import matplotlib.pyplot as plt
 
 def connect():
     conn = sqlite3.connect("loginpage.db")
@@ -22,11 +23,15 @@ def viewallusers():
     return rows
 
 def adduser(name, username, password):
-    conn = sqlite3.connect("loginpage.db")
-    cur = conn.cursor()
-    cur.execute("INSERT INTO users VALUES(?,?,?)", (name, username, password))
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect("loginpage.db")
+        cur = conn.cursor()
+        cur.execute("INSERT INTO users VALUES(?,?,?)", (name, username, password))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        messagebox.showinfo('oops something wrong', 'Username already exists')
+    finally:
+        conn.close()
 
 def deleteallusers():
     conn = sqlite3.connect("loginpage.db")
@@ -56,7 +61,7 @@ def viewwindow():
     gui = Toplevel(root)
     gui.title("VIEW ALL USERS")
     gui.geometry("800x700")
-    Message(gui, font=("Castellar", 22, "bold"), text="NAME      USERNAME      PASSWORD", width=700).pack()
+    Message(gui, font=("Castellar", 22, "bold"), text=" NAME       USERNAME     PASSWORD", width=700).pack()
     for row in viewallusers():
         a = row[0]
         b = row[1]
@@ -74,8 +79,11 @@ def register():
     c = register_password.get()
     d = register_repassword.get()
     if c == d and c != "" and len(c) > 5 and a != "" and b != "":
-        adduser(a, b, c)
-        messagebox.showinfo(':)', 'Registration Successful')      
+        try:
+            adduser(a, b, c)
+            messagebox.showinfo(':)', 'Registration Successful')
+        except sqlite3.IntegrityError:
+            messagebox.showinfo('oops something wrong', 'Username already exists')      
     else:
         if (a == "" or b == "" or c == "" or d == ""):
             messagebox.showinfo('oops something wrong', 'Field should not be empty')
@@ -268,7 +276,7 @@ def appwindow(username):
     
     def search_item():
         list1.delete(0, END)
-        list1.insert(END, "ID   NAME     DATE      COST")
+        list1.insert(END, "ID    NAME      DATE      COST    CATEGORY")
         for row in search(exp_itemname.get(), exp_date.get(), exp_cost.get(), exp_category.get()):
             a = str(row[0])
             b = str(row[1])
@@ -281,13 +289,44 @@ def appwindow(username):
         e2.delete(0, END)
         e3.delete(0, END)
         e4.delete(0, END)
+
+
+    def fetch_data(username):
+        user_table = f"expenses_{username}"
+        conn = sqlite3.connect("expenseapp.db")
+        cur = conn.cursor()
+        cur.execute(f"SELECT category, SUM(cost) FROM {user_table} GROUP BY category")
+        data = cur.fetchall()
+        conn.close()
+        return data
+
+    def plot_pie_chart(data):
+        categories = [row[0] for row in data]
+        expenses = [row[1] for row in data]
+
+        plt.figure(figsize=(10, 7))
+        plt.pie(expenses, labels=categories, autopct='%1.1f%%', startangle=140)
+        plt.title('Expenses by Category')
+        plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        plt.show()
     
+    def graph():
+        data = fetch_data(username)
+        if data:
+            plot_pie_chart(data)
+        else:
+            print("No data found for the given username.")
+
+
     def endpage():
         Label(gui, width=100, height=100, font=("century", 35), bg="#bfbfbf", text="").place(x=-455, y=0)
         Label(gui, font=("lucida fax", 40), bg="#bfbfbf", text="EXPENSE TRACKER").place(x=190, y=10)
         Label(gui, font=("gabriola", 40), bg="#bfbfbf", text="An application developed using").place(x=70, y=170)
         Label(gui, font=("gabriola", 40), bg="#bfbfbf", text="sqlite3 and tkinter").place(x=400, y=250)
-        Label(gui, font=("ink free", 35), bg="#bfbfbf", text="HimanshuM").place(x=500, y=450)
+        Label(gui, font=("ink free", 22), bg="#bfbfbf", text="-Himanshu").place(x=500, y=450)
+        Label(gui, font=("ink free", 22), bg="#bfbfbf", text="-Sandhya").place(x=500, y=490)
+        Label(gui, font=("ink free", 22), bg="#bfbfbf", text="-Nirjala").place(x=500, y=530)
+        Label(gui, font=("ink free", 22), bg="#bfbfbf", text="-Rasrim").place(x=500, y=570)
         h = Label(gui, font=("century", 25), bg="#bfbfbf", text="This window auomatically closes after")
         h.place(x=65, y=650)
         ltime = Label(gui, font=("century", 25), bg="#bfbfbf", fg="black")
@@ -304,30 +343,32 @@ def appwindow(username):
 
     gui = Tk()
     gui.title("EXPENSE TRACKER")
-    gui.configure(bg='#0066ff')
+    gui.configure(bg='white')
     gui.geometry("900x700")
+    frame = Frame(gui, width=550, height=390, bg='#7ed4e3')
+    frame.place(x=0, y=50)
     l8 = Label(gui, width=60, height=7, font=("century", 35), bg="#1ad1ff", text="").place(x=450, y=60)
     l7 = Label(gui, width=100, height=10, font=("century", 35), bg="#1affd1", text="").place(x=-455, y=410)
-    l1 = Label(gui, font=("comic sans ms", 17), bg="#0066ff", text="Product name").place(x=10, y=150)
+    l1 = Label(gui, font=("comic sans ms", 17), bg="#7ed4e3", text="Product name").place(x=10, y=150)
     exp_itemname = StringVar()
     e1 = Entry(gui, font=("adobe clean", 15), textvariable=exp_itemname)
     e1.place(x=220, y=155, height=27, width=165)
-    l2 = Label(gui, font=("comic sans ms", 17), bg="#0066ff", text="Date(dd-mm-yyyy)").place(x=10, y=200)
+    l2 = Label(gui, font=("comic sans ms", 17), bg="#7ed4e3", text="Date(dd-mm-yyyy)").place(x=10, y=200)
     exp_date = StringVar()
     e2 = Entry(gui, font=("adobe clean", 15), textvariable=exp_date)
     e2.place(x=220, y=205, height=27, width=165)
-    l3 = Label(gui, font=("comic sans ms", 17), bg="#0066ff", text="Cost of product").place(x=10, y=250)
+    l3 = Label(gui, font=("comic sans ms", 17), bg="#7ed4e3", text="Cost of product").place(x=10, y=250)
     exp_cost = StringVar()
     e3 = Entry(gui, font=("adobe clean", 15), textvariable=exp_cost)
     e3.place(x=220, y=255, height=27, width=165)
     exp_category = StringVar()
-    l6 = Label(gui, font=("comic sans ms", 17), bg="#0066ff", text="Category").place(x=10, y=300)
+    l6 = Label(gui, font=("comic sans ms", 17), bg="#7ed4e3", text="Category").place(x=10, y=300)
     e4 = ttk.Combobox(gui, textvariable=exp_category, values=["FOOD", "CLOTHES", "TRANSPORT", "HOUSING", "OTHERS"], font=("adobe clean", 15))
     e4.place(x=220, y=300, height=27, width=165)
-    l4 = Label(gui, font=("comic sans ms", 17), bg="#1ad1ff", text="Select ID to delete").place(x=520, y=170)
+    l4 = Label(gui, font=("comic sans ms", 17), bg="#1ad1ff", text="Select ID to delete").place(x=520, y=150)
     exp_id = StringVar()
     sb = Spinbox(gui, font=("adobe clean", 17), from_=0, to_=200, textvariable=exp_id, justify=CENTER)
-    sb.place(x=765, y=174, height=30, width=50)
+    sb.place(x=745, y=153, height=30, width=50)
     scroll_bar = Scrollbar(gui)
     scroll_bar.place(x=671, y=410, height=277, width=20)  
     list1 = Listbox(gui, height=9, width=37, font=("comic sans ms", 16), yscrollcommand=scroll_bar.set)
@@ -338,19 +379,20 @@ def appwindow(username):
     list1.bind('<<ListboxSelect>>', get_selected_item)
 
     b1 = Button(gui, text="Add Item", font=("georgia", 17), activebackground="#fffa66", activeforeground="red", width=10, command=insertitems).place(x=30, y=350)
-    b2 = Button(gui, text="View all items", font=("georgia", 17), activebackground="#fffa66", activeforeground="red", width=12, command=viewallitems).place(x=8, y=545)
-    b3 = Button(gui, text="Delete with id", font=("georgia", 17), activebackground="#fffa66", activeforeground="red", width=12, command=deletewithid).place(x=572, y=220)
-    b4 = Button(gui, text="Delete all items", font=("georgia", 17), activebackground="#fffa66", activeforeground="red", width=15, command=deletealldata).place(x=550, y=280)
+    b2 = Button(gui, text="View all items", font=("georgia", 17), activebackground="#fffa66", activeforeground="red", width=10, command=viewallitems).place(x=8, y=545)
+    b3 = Button(gui, text="Delete with id", font=("georgia", 17), activebackground="#fffa66", activeforeground="red", width=12, command=deletewithid).place(x=550, y=190)
+    b4 = Button(gui, text="Delete all items", font=("georgia", 17), activebackground="#fffa66", activeforeground="red", width=12, command=deletealldata).place(x=550, y=240)
     b5 = Button(gui, text="Search", font=("georgia", 17), activebackground="#fffa66", activeforeground="red", width=10, command=search_item).place(x=220, y=350)
-    b6 = Button(gui, text="Total spent", font=("georgia", 17), activebackground="#fffa66", activeforeground="red", width=15, command=sumofitems).place(x=550, y=340)
-    b7 = Button(gui, text="Close app", font=("georgia", 17), activebackground="#fffa66", activeforeground="red", width=10, command=endpage).place(x=700, y=650)
-    b8 = Button(gui, text="Edit", font=("georgia", 17), activebackground="#fffa66", activeforeground="red", width=10, command=edit_item).place(x=8, y=445)
+    b6 = Button(gui, text="Total spent", font=("georgia", 17), activebackground="#fffa66", activeforeground="red", width=12, command=sumofitems).place(x=550, y=340)
+    b9 = Button(gui, text="Graph", font=("georgia", 17), activebackground="#fffa66", activeforeground="red", width=12, command=graph).place(x=550, y=290)
+    b7 = Button(gui, text="Close app", font=("georgia", 17), activebackground="#fffa66", activeforeground="red", width=10, command=endpage).place(x=710, y=620)
+    b8 = Button(gui, text="Edit", font=("georgia", 17), activebackground="#fffa66", activeforeground="red", width=10, command=edit_item).place(x=8, y=490)
     l6 = Label(gui, width=60, font=("century", 35), bg="#ff9999", fg="#b32d00", text="EXPENSE  TRACKER").place(x=-450, y=0)
     # Modified welcome message to show username-specific dashboard
     name = f"Welcome to {profilename}'s Dashboard"
-    l9 = Label(gui, width=60, font=("century", 30), bg="#9999ff", fg="black", text=name).place(x=-530, y=61)
-    ltime = Label(gui, font=("century", 30), bg="#9999ff", fg="black")
-    ltime.place(x=470, y=61)
+    l9 = Label(gui, width=60, font=("century", 24), bg="#9999ff", fg="black", text=name).place(x=-320, y=61)
+    ltime = Label(gui, font=("century", 24), bg="#9999ff", fg="black")
+    ltime.place(x=574, y=61)
     def digitalclock():
         text_input = time.strftime("%d-%m-%Y   %H:%M:%S")
         ltime.config(text=text_input)
@@ -361,24 +403,27 @@ def appwindow(username):
 
 root = Tk()
 root.configure(bg='#0066ff')
-frame = Frame(bd=0, highlightthickness=0, background="#751aff").place(relx=0.46, y=0, relwidth=1, relheight=1)
-frame2 = Frame(bd=0, highlightthickness=0, background="#33cccc").place(x=0, rely=0.78, relwidth=1, relheight=1)
+image1=Image.open("1.png")
+image1 = image1.resize((1000, 700))
+bg_image = ImageTk.PhotoImage(image1)
+bg_label = Label(root, image=bg_image)
+bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 root.title("LOGIN / REGISTER")
 root.geometry("1000x700")
-l1 = Label(root, font=("comic sans ms", 19), bg="#0066ff", text="Username").place(x=80, y=230)
-l2 = Label(root, font=("comic sans ms", 19), bg="#0066ff", text="Password").place(x=80, y=280)
-b1 = Button(root, text="Login", font=("algerian", 19), activebackground="#fffa66", activeforeground="red", width=12, command=login).place(x=110, y=360)
-l6 = Label(root, font=("comic sans ms", 19), bg="#751aff", text="Name").place(x=653, y=195)
-l3 = Label(root, font=("comic sans ms", 19), bg="#751aff", text="Username").place(x=604, y=243)
-l4 = Label(root, font=("comic sans ms", 19), bg="#751aff", text="Password").place(x=610, y=293)
-l5 = Label(root, font=("comic sans ms", 17), bg="#751aff", text="Confirm password").place(x=532, y=342)
-b2 = Button(root, text="Register", font=("algerian", 19), activebackground="#fffa66", activeforeground="red", width=12, command=register).place(x=630, y=400)
+l1 = Label(root, font=("comic sans ms", 19), bg="#94cef3", text="Username").place(x=80, y=250)
+l2 = Label(root, font=("comic sans ms", 19), bg="#94cef3", text="Password").place(x=80, y=300)
+b1 = Button(root, text="Login", font=("Microsoft Yahei", 16), activebackground="#fffa66", activeforeground="red", width=12, command=login).place(x=120, y=360)
+l6 = Label(root, font=("comic sans ms", 19), bg="#94cef3", text="Name").place(x=653, y=195)
+l3 = Label(root, font=("comic sans ms", 19), bg="#94cef3", text="Username").place(x=604, y=243)
+l4 = Label(root, font=("comic sans ms", 19), bg="#94cef3", text="Password").place(x=610, y=293)
+l5 = Label(root, font=("comic sans ms", 17), bg="#94cef3", text="Confirm password").place(x=532, y=342)
+b2 = Button(root, text="Register", font=("Microsoft Yahei", 16), activebackground="#fffa66", activeforeground="red", width=12, command=register).place(x=670, y=400)
 login_username = StringVar()
 e1 = Entry(root, font=("adobe clean", 15), textvariable=login_username)
-e1.place(x=205, y=238, height=25, width=165)
+e1.place(x=205, y=257, height=25, width=165)
 login_password = StringVar()
 e2 = Entry(root, font=("adobe clean", 15), textvariable=login_password, show="*")
-e2.place(x=205, y=287, height=25, width=165)
+e2.place(x=205, y=307, height=25, width=165)
 register_name = StringVar()
 e6 = Entry(root, font=("adobe clean", 15), textvariable=register_name)
 e6.place(x=740, y=200, height=25, width=165)
@@ -391,10 +436,9 @@ e4.place(x=740, y=300, height=25, width=165)
 register_repassword = StringVar()
 e5 = Entry(root, font=("adobe clean", 15), textvariable=register_repassword, show="*")
 e5.place(x=740, y=350, height=25, width=165)
-Label(root, width=60, font=("jokerman", 35), bg="#ff9999", fg="#cc2900", text="EXPENSE  TRACKER").place(x=-400, y=0)
-Label(root, font=("Ink Free", 27), bg="#33cccc", fg="#0000ff", text="RASHRIM").place(x=750, y=590)
-b3 = Button(root, text="Exit Window", font=("candara", 15, "bold"), activebackground="#fffa66", activeforeground="red", width=10, command=root.destroy).place(x=410, y=630)
-b4 = Button(root, text="Delete all users", font=("candara", 15, "bold"), activebackground="#fffa66", activeforeground="red", width=12, command=deleteallusers).place(x=130, y=620)
-b5 = Button(root, text="View all users", font=("candara", 15, "bold"), activebackground="#fffa66", activeforeground="red", width=12, command=viewwindow).place(x=130, y=560)
+Label(root, font=("jokerman", 35), text="EXPENS0").place(x=380, y=20)
+b3 = Button(root, text="Exit Window", font=("candara", 15, "bold"), activebackground="#fffa66", activeforeground="red", width=10, command=root.destroy).place(x=760, y=620)
+b4 = Button(root, text="Delete all users", font=("candara", 15, "bold"), activebackground="#fffa66", activeforeground="red", width=12, command=deleteallusers).place(x=430, y=620)
+b5 = Button(root, text="View all users", font=("candara", 15, "bold"), activebackground="#fffa66", activeforeground="red", width=12, command=viewwindow).place(x=130, y=620)
 root.resizable(False, False)
 root.mainloop()
