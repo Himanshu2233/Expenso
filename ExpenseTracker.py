@@ -99,6 +99,7 @@ def login():
     b = login_password.get()
     getusername(a, b)   
     if (checkuser(a, b)) != None:
+        messagebox.showinfo('logged in sucessfully', 'login successful')
         root.destroy()
         appwindow(a) 
     else:
