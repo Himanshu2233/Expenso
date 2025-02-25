@@ -28,6 +28,7 @@ def adduser(name, username, password):
         cur = conn.cursor()
         cur.execute("INSERT INTO users VALUES(?,?,?)", (name, username, password))
         conn.commit()
+        messagebox.showinfo(':)', 'Registration Successful')
     except sqlite3.IntegrityError:
         messagebox.showinfo('oops something wrong', 'Username already exists')
     finally:
@@ -81,7 +82,6 @@ def register():
     if c == d and c != "" and len(c) > 5 and a != "" and b != "":
         try:
             adduser(a, b, c)
-            messagebox.showinfo(':)', 'Registration Successful')
         except sqlite3.IntegrityError:
             messagebox.showinfo('oops something wrong', 'Username already exists')      
     else:
@@ -317,7 +317,7 @@ def appwindow(username):
         else:
             print("No data found for the given username.")
 
-
+#end page
     def endpage():
         Label(gui, width=100, height=100, font=("century", 35), bg="#bfbfbf", text="").place(x=-455, y=0)
         Label(gui, font=("lucida fax", 40), bg="#bfbfbf", text="EXPENSE TRACKER").place(x=190, y=10)
@@ -340,11 +340,12 @@ def appwindow(username):
             t = t - 1
         timer()
         gui.after(11000, gui.destroy)
-
+# Dashboard window
     gui = Tk()
     gui.title("EXPENSE TRACKER")
     gui.configure(bg='white')
     gui.geometry("900x700")
+    gui.iconbitmap("icon.ico")
     frame = Frame(gui, width=550, height=390, bg='#7ed4e3')
     frame.place(x=0, y=50)
     l8 = Label(gui, width=60, height=7, font=("century", 35), bg="#1ad1ff", text="").place(x=450, y=60)
@@ -401,8 +402,11 @@ def appwindow(username):
     gui.resizable(False, False)
     gui.mainloop()
 
+
+# Main window
 root = Tk()
 root.configure(bg='#0066ff')
+root.iconbitmap("icon.ico")
 image1=Image.open("1.png")
 image1 = image1.resize((1000, 700))
 bg_image = ImageTk.PhotoImage(image1)
@@ -436,7 +440,7 @@ e4.place(x=740, y=300, height=25, width=165)
 register_repassword = StringVar()
 e5 = Entry(root, font=("adobe clean", 15), textvariable=register_repassword, show="*")
 e5.place(x=740, y=350, height=25, width=165)
-Label(root, font=("jokerman", 35), text="EXPENS0").place(x=380, y=20)
+Label(root, font=("jokerman", 42), text="EXPENS0",bg="#fff" ).place(x=380, y=20)
 b3 = Button(root, text="Exit Window", font=("candara", 15, "bold"), activebackground="#fffa66", activeforeground="red", width=10, command=root.destroy).place(x=760, y=620)
 b4 = Button(root, text="Delete all users", font=("candara", 15, "bold"), activebackground="#fffa66", activeforeground="red", width=12, command=deleteallusers).place(x=430, y=620)
 b5 = Button(root, text="View all users", font=("candara", 15, "bold"), activebackground="#fffa66", activeforeground="red", width=12, command=viewwindow).place(x=130, y=620)
