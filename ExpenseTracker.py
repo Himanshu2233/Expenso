@@ -117,7 +117,6 @@ def appwindow(username):
     def connect1():
         conn = sqlite3.connect("expenseapp.db")
         cur = conn.cursor()
-      
         cur.execute(f"CREATE TABLE IF NOT EXISTS {user_table}(id INTEGER PRIMARY KEY,itemname TEXT,date TEXT,cost TEXT, category TEXT)")
         conn.commit()
         conn.close()
@@ -184,7 +183,7 @@ def appwindow(username):
                 conn.close()
                 messagebox.showinfo('Successful', 'Item updated')
                 viewallitems()  # Refresh the list to show updated item
-                clear_feilds()  
+                clear_feilds()  #clear all the fields
         else:
             messagebox.showinfo("oops something wrong", "No item selected")
     
@@ -318,6 +317,7 @@ def appwindow(username):
         else:
             print("No data found for the given username.")
 
+
 #end page
     def endpage():
         Label(gui, width=100, height=100, font=("century", 35), bg="#bfbfbf", text="").place(x=-455, y=0)
@@ -341,6 +341,8 @@ def appwindow(username):
             t = t - 1
         timer()
         gui.after(11000, gui.destroy)
+
+
 # Dashboard window
     gui = Tk()
     gui.title("EXPENSE TRACKER")
